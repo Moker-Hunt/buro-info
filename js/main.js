@@ -9,113 +9,161 @@ document.addEventListener('DOMContentLoaded', function() {
     const body = document.body;
     
     // Marcar la página actual como activa en la navegación
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    document.querySelectorAll('.nav-links a').forEach(link => {
-        const href = link.getAttribute('href');
-        if (href === currentPage || (currentPage === 'index.html' && href === '/')) {
-            link.classList.add('active');
-        }
-    });
-    
-    // Mejorar la navegación móvil
-    if (burger) {
-        burger.addEventListener('click', () => {
-            // Toggle nav
-            nav.classList.toggle('nav-active');
-            
-            // Toggle body scroll
-            body.classList.toggle('menu-open');
-            
-            // Animate links
-            navLinks.forEach((link, index) => {
-                if (link.style.animation) {
-                    link.style.animation = '';
-                } else {
-                    link.style.animation = `navLinkFade 0.4s ease forwards ${index / 7 + 0.2}s`;
+    try {
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        const navLinkAnchors = document.querySelectorAll('.nav-links a');
+        if (navLinkAnchors && navLinkAnchors.length > 0) {
+            navLinkAnchors.forEach(link => {
+                try {
+                    const href = link.getAttribute('href');
+                    if (href === currentPage || (currentPage === 'index.html' && href === '/')) {
+                        link.classList.add('active');
+                    }
+                } catch (e) {
+                    console.log('Error al marcar página activa:', e);
                 }
             });
-            
-            // Burger animation
-            burger.classList.toggle('toggle');
+        }
+    } catch (e) {
+        console.log('Error en navegación:', e);
+    }
+    
+    // Mejorar la navegación móvil
+    if (burger && nav) {
+        burger.addEventListener('click', function() {
+            try {
+                // Toggle nav
+                nav.classList.toggle('nav-active');
+                
+                // Toggle body scroll
+                if (body) body.classList.toggle('menu-open');
+                
+                // Animate links
+                if (navLinks && navLinks.length > 0) {
+                    navLinks.forEach((link, index) => {
+                        if (link) {
+                            if (link.style.animation) {
+                                link.style.animation = '';
+                            } else {
+                                link.style.animation = `navLinkFade 0.4s ease forwards ${index / 7 + 0.2}s`;
+                            }
+                        }
+                    });
+                }
+                
+                // Burger animation
+                this.classList.toggle('toggle');
+            } catch (e) {
+                console.log('Error en toggle de navegación:', e);
+            }
         });
         
         // Cerrar menú al hacer clic en un enlace
-        navLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                if (nav.classList.contains('nav-active')) {
-                    nav.classList.remove('nav-active');
-                    burger.classList.remove('toggle');
-                    body.classList.remove('menu-open');
-                    
-                    // Reset animations
-                    navLinks.forEach(link => {
-                        link.style.animation = '';
+        if (navLinks && navLinks.length > 0) {
+            navLinks.forEach(link => {
+                if (link) {
+                    link.addEventListener('click', () => {
+                        try {
+                            if (nav && nav.classList.contains('nav-active')) {
+                                nav.classList.remove('nav-active');
+                                if (burger) burger.classList.remove('toggle');
+                                if (body) body.classList.remove('menu-open');
+                                
+                                // Reset animations
+                                navLinks.forEach(navLink => {
+                                    if (navLink) navLink.style.animation = '';
+                                });
+                            }
+                        } catch (e) {
+                            console.log('Error al cerrar menú:', e);
+                        }
                     });
                 }
             });
-        });
+        }
     }
     
     // Manejo mejorado del scroll para header
     let lastScrollTop = 0;
     let scrollTimer;
+    let isScrolling = false;
     
     function handleScroll() {
-        let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        if (!header) return;
         
-        // Aplicar clase scrolled al header cuando hay scroll
-        if (scrollTop > 10) {
-            header.classList.add('scrolled');
-        } else {
-            header.classList.remove('scrolled');
-        }
-        
-        // Ocultar/mostrar header al hacer scroll
-        if (scrollTop > lastScrollTop && scrollTop > 100) {
-            // Scroll hacia abajo
-            header.classList.add('header-hidden');
-        } else {
-            // Scroll hacia arriba
-            header.classList.remove('header-hidden');
-        }
-        
-        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-        
-        // Mostrar/ocultar botón "volver arriba"
-        const backToTop = document.querySelector('.back-to-top');
-        if (backToTop) {
-            if (scrollTop > 300) {
-                backToTop.classList.add('visible');
+        try {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Aplicar clase scrolled al header cuando hay scroll
+            if (scrollTop > 10) {
+                header.classList.add('scrolled');
             } else {
-                backToTop.classList.remove('visible');
+                header.classList.remove('scrolled');
             }
+            
+            // Ocultar/mostrar header al hacer scroll
+            if (scrollTop > lastScrollTop && scrollTop > 100) {
+                // Scroll hacia abajo
+                header.classList.add('header-hidden');
+            } else {
+                // Scroll hacia arriba
+                header.classList.remove('header-hidden');
+            }
+            
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+            
+            // Mostrar/ocultar botón "volver arriba"
+            const backToTop = document.querySelector('.back-to-top');
+            if (backToTop) {
+                if (scrollTop > 300) {
+                    backToTop.classList.add('visible');
+                } else {
+                    backToTop.classList.remove('visible');
+                }
+            }
+            
+            // Animación de secciones al hacer scroll
+            animateSections();
+        } catch (e) {
+            console.log('Error en handleScroll:', e);
         }
-        
-        // Animación de secciones al hacer scroll
-        animateSections();
     }
     
     // Optimización de rendimiento para el scroll
     window.addEventListener('scroll', () => {
-        if (!scrollTimer) {
-            scrollTimer = setTimeout(() => {
-                handleScroll();
-                scrollTimer = null;
-            }, 10);
-        }
+        if (isScrolling) return;
+        isScrolling = true;
+        
+        // Usar requestAnimationFrame para mejor rendimiento
+        window.requestAnimationFrame(() => {
+            if (!scrollTimer) {
+                scrollTimer = setTimeout(() => {
+                    handleScroll();
+                    scrollTimer = null;
+                    isScrolling = false;
+                }, 10);
+            }
+        });
     });
     
     // Animación de secciones al hacer scroll
     function animateSections() {
         const sections = document.querySelectorAll('.section');
+        if (!sections || sections.length === 0) return;
+        
         const windowHeight = window.innerHeight;
         
         sections.forEach(section => {
-            const sectionTop = section.getBoundingClientRect().top;
-            const sectionPoint = 100;
-            
-            if (sectionTop < windowHeight - sectionPoint) {
-                section.classList.add('visible');
+            try {
+                if (!section) return;
+                const sectionTop = section.getBoundingClientRect().top;
+                const sectionPoint = 100;
+                
+                if (sectionTop < windowHeight - sectionPoint) {
+                    section.classList.add('visible');
+                }
+            } catch (e) {
+                console.log('Error en animación de sección:', e);
             }
         });
     }
@@ -143,12 +191,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const cookiesAccepted = localStorage.getItem('cookiesAccepted');
     
     function hideCookieBanner() {
+        if (!cookieBanner || !cookieOverlay) return;
+        
         cookieBanner.style.opacity = '0';
         cookieOverlay.style.opacity = '0';
         
         setTimeout(() => {
-            cookieBanner.style.display = 'none';
-            cookieOverlay.style.display = 'none';
+            if (cookieBanner) cookieBanner.style.display = 'none';
+            if (cookieOverlay) cookieOverlay.style.display = 'none';
             document.body.style.overflow = 'auto';
         }, 500);
     }
@@ -161,15 +211,21 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Mostrar banner de cookies con un pequeño retraso para mejor UX
             setTimeout(() => {
-                cookieBanner.style.display = 'flex';
-                cookieOverlay.style.display = 'block';
-                document.body.style.overflow = 'hidden';
+                if (cookieBanner && cookieOverlay) {
+                    cookieBanner.style.display = 'flex';
+                    cookieOverlay.style.display = 'block';
+                    document.body.style.overflow = 'hidden';
+                }
             }, 1000);
             
             // Manejar aceptación de cookies
             if (acceptCookiesBtn) {
                 acceptCookiesBtn.addEventListener('click', () => {
-                    localStorage.setItem('cookiesAccepted', 'true');
+                    try {
+                        localStorage.setItem('cookiesAccepted', 'true');
+                    } catch (e) {
+                        console.log('Error al guardar en localStorage:', e);
+                    }
                     hideCookieBanner();
                 });
             }
