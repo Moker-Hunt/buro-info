@@ -1,5 +1,19 @@
 // Funcionalidad principal para buro-info.com - Versión mejorada
 
+// Prevenir errores de promesas no capturadas
+window.addEventListener('unhandledrejection', function(event) {
+    console.log('Unhandled rejection (promise: ', event.promise, ', reason: ', event.reason, ')');
+    event.preventDefault();
+});
+
+// Prevenir errores de mensajes asíncronos
+window.addEventListener('error', function(event) {
+    console.log('Error capturado:', event.error);
+    // Prevenir que el error se propague
+    event.preventDefault();
+    return true;
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     // Navegación responsiva mejorada
     const burger = document.querySelector('.burger');
